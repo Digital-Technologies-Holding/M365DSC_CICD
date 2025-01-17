@@ -20,24 +20,26 @@ jobs:
       - name: Checkout CICD Repository
         uses: actions/checkout@v3
         with:
-          repository: Digital-Technologies-Holding/M365DSC_CICD # Replace with the actual owner/repo
+          repository: Digital-Technologies-Holding/M365DSC_CICD # Replace with actual owner/repo
           path: ./s/CICD
-          token: ${{ secrets.DSC }} # Or use a custom PAT if required
-
-      # Configure WinRM
+          token: ${{ secrets.DSC }} # Use a secret or custom PAT as required
+          
+      # Configure WinRM with cmd
       - name: Configure WinRM
         run: |
-          @echo off
-          winrm invoke restore winrm/config
-          winrm quickconfig -quiet
-          winrm set winrm/config @{MaxEnvelopeSizekb="4096"} > null
-          winrm get winrm/config | find /i "MaxEnvelopeSizekb"
-
-      # Install Required Modules
+          cmd.exe /c "
+            @echo off
+            call winrm invoke restore winrm/config
+            call winrm quickconfig -quiet
+            call winrm set winrm/config @{MaxEnvelopeSizekb='4096'} > null
+            call winrm get winrm/config | find /i 'MaxEnvelopeSizekb'
+          "
+          
+      # Install Required Modules (Prepare Agent)
       - name: Prepare Agent (Install Modules)
         shell: pwsh
         run: |
-          ./CICD/Scripts/DeployModules.ps1 -PackageSourceLocation "${{ secrets.PACKAGE_SOURCE_LOCATION }}" -PATToken "${{ secrets.PAT_TOKEN }}"
+          ./s/CICD/Scripts/DeployModules.ps1 -PackageSourceLocation "${{ secrets.PACKAGE_SOURCE_LOCATION }}" -PATToken "${{ secrets.PAT_TOKEN }}"
         env:
           FAIL_ON_STDERR: true
 
@@ -45,28 +47,28 @@ jobs:
       - name: Validate Secrets
         uses: azure/powershell@v1
         with:
-          scriptPath: ./CICD/Scripts/ValidateSecrets.ps1
+          scriptPath: ./s/CICD/Scripts/ValidateSecrets.ps1
           arguments: -KeyVault "${{ secrets.KEY_VAULT }}"
         env:
           AZURE_SUBSCRIPTION: ${{ secrets.AZURE_SUBSCRIPTION }}
 
-      # Run Pre-Build QA Tests
+      # Run Pre-Build QA Tests (Merge and Test Data Files)
       - name: Pre Build (Merge and Test Data Files)
         shell: pwsh
         run: |
-          ./CICD/Scripts/PreBuild.ps1
+          ./s/CICD/Scripts/PreBuild.ps1
 
-      # Compile MOF Files
+      # Compile MOF Files (Build Artifacts)
       - name: Compile Artifacts
         shell: pwsh
         run: |
-          ./CICD/Scripts/Build.ps1
+          ./s/CICD/Scripts/Build.ps1
 
-      # Post-Build Updates
+      # Post-Build Updates (Update Environments)
       - name: Post Build (Update Environments)
         shell: pwsh
         run: |
-          ./CICD/Scripts/PostBuild.ps1
+          ./s/CICD/Scripts/PostBuild.ps1
         env:
           SYSTEM_ACCESSTOKEN: ${{ secrets.SYSTEM_ACCESSTOKEN }}
 
