@@ -20,10 +20,10 @@ jobs:
       - name: Checkout CICD Repository
         uses: actions/checkout@v3
         with:
-          repository: Digital-Technologies-Holding/M365DSC_CICD # Replace with actual owner/repo
+          repository: Digital-Technologies-Holding/M365DSC_CICD  # Replace with actual owner/repo
           path: ./s/CICD
-          token: ${{ secrets.DSC }} # Use a secret or custom PAT as required
-          
+          token: ${{ secrets.DSC }}  # Use a secret or custom PAT as required
+
       # Configure WinRM with cmd
       - name: Configure WinRM
         run: |
@@ -34,7 +34,7 @@ jobs:
             call winrm set winrm/config @{MaxEnvelopeSizekb='4096'} > null
             call winrm get winrm/config | find /i 'MaxEnvelopeSizekb'
           "
-          
+
       # Install Required Modules (Prepare Agent)
       - name: Prepare Agent (Install Modules)
         shell: pwsh
@@ -45,12 +45,15 @@ jobs:
 
       # Validate Secrets in Azure KeyVault
       - name: Validate Secrets
-        uses: azure/powershell@v1
+        uses: AzurePowerShell@5
         with:
-          scriptPath: ./s/CICD/Scripts/ValidateSecrets.ps1
-          arguments: -KeyVault "${{ secrets.KEY_VAULT }}"
-        env:
-          AZURE_SUBSCRIPTION: ${{ secrets.AZURE_SUBSCRIPTION }}
+          azureSubscription: ${{ secrets.AZURE_SUBSCRIPTION }}  # Your Azure subscription
+          ScriptType: 'FilePath'
+          ScriptPath: './s/CICD/Scripts/ValidateSecrets.ps1'
+          ScriptArguments: '-KeyVault "${{ secrets.KEY_VAULT }}"'
+          azurePowerShellVersion: 'latest'
+          failOnStandardError: true
+          errorActionPreference: 'Stop'
 
       # Run Pre-Build QA Tests (Merge and Test Data Files)
       - name: Pre Build (Merge and Test Data Files)
