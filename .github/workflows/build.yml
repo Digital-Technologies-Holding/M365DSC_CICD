@@ -22,7 +22,7 @@ jobs:
         with:
           repository: Digital-Technologies-Holding/M365DSC_CICD # Replace with the actual owner/repo
           path: ./s/CICD
-          token: ${{ secrets.MY_CUSTOM_PAT }} # Or use a custom PAT if required
+          token: ${{ secrets.DSC }} # Or use a custom PAT if required
 
       # Configure WinRM
       - name: Configure WinRM
