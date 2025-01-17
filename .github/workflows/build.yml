@@ -10,20 +10,22 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # Checkout Data repository
-      - name: Checkout Data Repository
-        uses: actions/checkout@v3
-        with:
-          path: ./s/Data
-
       # Checkout CICD repository
       - name: Checkout CICD Repository
         uses: actions/checkout@v3
         with:
-          repository: Digital-Technologies-Holding/M365DSC_CICD  # Replace with actual owner/repo
+          repository: Digital-Technologies-Holding/M365DSC_CICD
           path: ./s/CICD
-          token: ${{ secrets.DSC }}  # Use a secret or custom PAT as required
+          token: ${{ secrets.DSC }}
 
+      # Checkout Data repository that contains the Environments folder
+      - name: Checkout Data Repository
+        uses: actions/checkout@v3
+        with:
+          repository: Digital-Technologies-Holding/M365DSC_Data  # Replace with actual repo containing Environments
+          path: ./s/Data
+          token: ${{ secrets.DSC }}
+        
       # Configure WinRM with cmd
       - name: Configure WinRM
         run: |
@@ -47,12 +49,12 @@ jobs:
       - name: Validate Secrets
         uses: azure/powershell@v1
         with:
-          azPSVersion: 'latest'  # Specify the version of Azure PowerShell
           inlineScript: |
-            . ./s/CICD/Scripts/ValidateSecrets.ps1 -KeyVault "${{ secrets.KEY_VAULT }}"
+            .\s\CICD\Scripts\ValidateSecrets.ps1 -KeyVault "${{ secrets.KEY_VAULT }}"
+          azPSVersion: 'latest'
           failOnStandardError: true
           errorActionPreference: 'Stop'
-
+        
       # Run Pre-Build QA Tests (Merge and Test Data Files)
       - name: Pre Build (Merge and Test Data Files)
         shell: pwsh
