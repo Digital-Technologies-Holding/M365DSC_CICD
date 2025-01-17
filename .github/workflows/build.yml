@@ -18,14 +18,14 @@ jobs:
           path: ./s/CICD
           token: ${{ secrets.DSC }}
 
-      # Checkout Data repository that contains the Environments folde
+      # Checkout Data repository that contains the Environments folder
       - name: Checkout Data Repository
         uses: actions/checkout@v3
         with:
           repository: Digital-Technologies-Holding/M365DSC_Data  # Replace with actual repo containing Environments
           path: ./s/Data
           token: ${{ secrets.DSC }}
-        
+
       # Configure WinRM with cmd
       - name: Configure WinRM
         run: |
@@ -55,6 +55,17 @@ jobs:
       - name: Set Subscription ID
         run: |
           echo "AZURE_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+      # Run the PrepareKeyvault.ps1 script to ensure certificates are in place
+      - name: Prepare KeyVault
+        shell: pwsh
+        run: |
+          ./s/CICD/Scripts/PrepareKeyvault.ps1 -VaultName "${{ secrets.KEY_VAULT }}" -DataFileFolder "./s/Data/Environments"
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       # Validate Secrets in Azure KeyVault
       - name: Validate Secrets
