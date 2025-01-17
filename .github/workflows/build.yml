@@ -55,7 +55,7 @@ jobs:
           failOnStandardError: true
           errorActionPreference: 'Stop'
         
-      # Run Pre-Build QA Tests (Merge and Test Data Files)
+      # Run Pre-Build QA Tests (Merge and Test Data Files
       - name: Pre Build (Merge and Test Data Files)
         shell: pwsh
         run: |
