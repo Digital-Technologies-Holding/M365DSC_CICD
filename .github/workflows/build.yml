@@ -18,7 +18,7 @@ jobs:
           path: ./s/CICD
           token: ${{ secrets.DSC }}
 
-      # Checkout Data repository that contains the Environments folder
+      # Checkout Data repository that contains the Environments folde
       - name: Checkout Data Repository
         uses: actions/checkout@v3
         with:
