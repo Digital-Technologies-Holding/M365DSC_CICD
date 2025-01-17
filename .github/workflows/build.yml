@@ -47,10 +47,9 @@ jobs:
       - name: Validate Secrets
         uses: azure/powershell@v1
         with:
-          azureSubscription: ${{ secrets.AZURE_SUBSCRIPTION }}  # Your Azure subscription
+          azPSVersion: 'latest'  # Specify the version of Azure PowerShell
           inlineScript: |
             . ./s/CICD/Scripts/ValidateSecrets.ps1 -KeyVault "${{ secrets.KEY_VAULT }}"
-          azurePowerShellVersion: 'latest'
           failOnStandardError: true
           errorActionPreference: 'Stop'
 
