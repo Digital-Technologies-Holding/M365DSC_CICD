@@ -1,1 +1,77 @@
+name: M365DSC Build
 
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      # Checkout Data repository
+      - name: Checkout Data Repository
+        uses: actions/checkout@v3
+        with:
+          path: ./s/Data
+
+      # Checkout CICD repository
+      - name: Checkout CICD Repository
+        uses: actions/checkout@v3
+        with:
+          repository: M365DSC_CICD
+          path: ./s/CICD
+
+      # Configure WinRM
+      - name: Configure WinRM
+        run: |
+          @echo off
+          winrm invoke restore winrm/config
+          winrm quickconfig -quiet
+          winrm set winrm/config @{MaxEnvelopeSizekb="4096"} > null
+          winrm get winrm/config | find /i "MaxEnvelopeSizekb"
+
+      # Install Modules
+      - name: Prepare Agent (Install Modules)
+        shell: pwsh
+        run: |
+          ./CICD/Scripts/DeployModules.ps1 -PackageSourceLocation "${{ secrets.PACKAGE_SOURCE_LOCATION }}" -PATToken "${{ secrets.PAT_TOKEN }}"
+        env:
+          FAIL_ON_STDERR: true
+
+      # Validate Secrets in Azure KeyVault
+      - name: Validate Secrets
+        uses: azure/powershell@v1
+        with:
+          scriptPath: ./CICD/Scripts/ValidateSecrets.ps1
+          arguments: -KeyVault "${{ secrets.KEY_VAULT }}"
+        env:
+          AZURE_SUBSCRIPTION: ${{ secrets.AZURE_SUBSCRIPTION }}
+
+      # Pre-Build QA Tests
+      - name: Pre Build (Merge and Test Data Files)
+        shell: pwsh
+        run: |
+          ./CICD/Scripts/PreBuild.ps1
+
+      # Compile MOF Files
+      - name: Compile Artifacts
+        shell: pwsh
+        run: |
+          ./CICD/Scripts/Build.ps1
+
+      # Post Build Updates
+      - name: Post Build (Update Environments)
+        shell: pwsh
+        run: |
+          ./CICD/Scripts/PostBuild.ps1
+        env:
+          SYSTEM_ACCESSTOKEN: ${{ secrets.SYSTEM_ACCESSTOKEN }}
+
+      # Publish Artifacts
+      - name: Publish Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: DeployPackage
+          path: ${{ secrets.BUILD_FOLDER_NAME }}/
