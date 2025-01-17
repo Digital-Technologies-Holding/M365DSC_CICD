@@ -45,12 +45,11 @@ jobs:
 
       # Validate Secrets in Azure KeyVault
       - name: Validate Secrets
-        uses: AzurePowerShell@5
+        uses: azure/powershell@v1
         with:
           azureSubscription: ${{ secrets.AZURE_SUBSCRIPTION }}  # Your Azure subscription
-          ScriptType: 'FilePath'
-          ScriptPath: './s/CICD/Scripts/ValidateSecrets.ps1'
-          ScriptArguments: '-KeyVault "${{ secrets.KEY_VAULT }}"'
+          inlineScript: |
+            . ./s/CICD/Scripts/ValidateSecrets.ps1 -KeyVault "${{ secrets.KEY_VAULT }}"
           azurePowerShellVersion: 'latest'
           failOnStandardError: true
           errorActionPreference: 'Stop'
