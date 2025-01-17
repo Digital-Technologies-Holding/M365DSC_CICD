@@ -20,9 +20,9 @@ jobs:
       - name: Checkout CICD Repository
         uses: actions/checkout@v3
         with:
-          repository: YourOrg/M365DSC_CICD # Replace with the actual owner/repo
+          repository: Digital-Technologies-Holding/M365DSC_CICD # Replace with the actual owner/repo
           path: ./s/CICD
-          token: ${{ secrets.GITHUB_TOKEN }} # Or use a custom PAT if required
+          token: ${{ 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 }} # Or use a custom PAT if required
 
       # Configure WinRM
       - name: Configure WinRM
