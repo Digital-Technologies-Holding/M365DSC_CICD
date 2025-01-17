@@ -108,7 +108,7 @@ foreach ($datafile in $dataFiles)
 
 Write-Log -Object "Getting encryption certificate secret from KeyVault '$KeyVault'"
 
-$encryptCertName = 'Cert-DSCEncrypt'
+$encryptCertName = 'Cert-DSCEncrypt1'
 Write-Log -Object "Processing certificate: $encryptCertName"
 
 $secret = Get-AzKeyVaultSecret -VaultName $KeyVault -Name $encryptCertName -AsPlainText -ErrorAction SilentlyContinue
