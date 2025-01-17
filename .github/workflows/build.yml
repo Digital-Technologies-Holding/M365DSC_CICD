@@ -20,8 +20,9 @@ jobs:
       - name: Checkout CICD Repository
         uses: actions/checkout@v3
         with:
-          repository: M365DSC_CICD
+          repository: YourOrg/M365DSC_CICD # Replace with the actual owner/repo
           path: ./s/CICD
+          token: ${{ secrets.GITHUB_TOKEN }} # Or use a custom PAT if required
 
       # Configure WinRM
       - name: Configure WinRM
@@ -32,7 +33,7 @@ jobs:
           winrm set winrm/config @{MaxEnvelopeSizekb="4096"} > null
           winrm get winrm/config | find /i "MaxEnvelopeSizekb"
 
-      # Install Modules
+      # Install Required Modules
       - name: Prepare Agent (Install Modules)
         shell: pwsh
         run: |
@@ -49,7 +50,7 @@ jobs:
         env:
           AZURE_SUBSCRIPTION: ${{ secrets.AZURE_SUBSCRIPTION }}
 
-      # Pre-Build QA Tests
+      # Run Pre-Build QA Tests
       - name: Pre Build (Merge and Test Data Files)
         shell: pwsh
         run: |
@@ -61,7 +62,7 @@ jobs:
         run: |
           ./CICD/Scripts/Build.ps1
 
-      # Post Build Updates
+      # Post-Build Updates
       - name: Post Build (Update Environments)
         shell: pwsh
         run: |
@@ -69,7 +70,7 @@ jobs:
         env:
           SYSTEM_ACCESSTOKEN: ${{ secrets.SYSTEM_ACCESSTOKEN }}
 
-      # Publish Artifacts
+      # Publish Build Artifacts
       - name: Publish Artifacts
         uses: actions/upload-artifact@v3
         with:
