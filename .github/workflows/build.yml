@@ -10,7 +10,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # Checkout CICD repositor
+      # Checkout CICD repository
       - name: Checkout CICD Repository
         uses: actions/checkout@v3
         with:
@@ -63,26 +63,75 @@ jobs:
         run: |
           echo "AZURE_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
-      # Run the PrepareKeyvault.ps1 script to ensure certificates are in place
-      - name: Prepare KeyVault
+      # Validate Secrets in Azure KeyVault (New script)
+      - name: Validate Secrets in Azure KeyVault
         shell: pwsh
         run: |
-          ./s/CICD/Supportscripts/PrepareKeyvault.ps1 -VaultName "${{ secrets.KEY_VAULT }}" -DataFileFolder "./s/DataFiles/Environments/01_Test"
+          # Define KeyVault and environment folder path
+          $KeyVault = "${{ secrets.KEY_VAULT }}"
+          $workingDirectoryData = "./s/DataFiles/Environments"
+          
+          # Import Azure module
+          Import-Module Az.KeyVault -Force
+
+          # Read environment data files
+          $dataFiles = Get-ChildItem -Path "$workingDirectoryData" -Filter '*#Generic.psd1' -Recurse
+
+          $foundError = $false
+          foreach ($datafile in $dataFiles) {
+              Write-Host "Processing data file: $($datafile.Name)"
+              $envData = Import-PSDataFile $datafile.FullName
+              $envShortName = $envData.NonNodeData.Environment.ShortName
+
+              if ($envShortName -notmatch '^\w*$') {
+                  $envShortNameToken = $envShortName -replace "{" -replace "}"
+                  if ($envData.NonNodeData.Environment.Tokens.ContainsKey($envShortNameToken)) {
+                      $envShortName = $envData.NonNodeData.Environment.Tokens.$envShortNameToken
+                  } else {
+                      Write-Error "[ERROR] Invalid Environment ShortName value: $envShortNameToken"
+                      $foundError = $true
+                      continue
+                  }
+              }
+
+              # Loop through AppCredentials and validate certificates in KeyVault
+              foreach ($appcred in $envData.NonNodeData.AppCredentials) {
+                  $kvCertName = '{0}-Cert-{1}' -f $envShortName, $appcred.Workload
+                  Write-Host "Processing certificate: $kvCertName"
+
+                  $secret = Get-AzKeyVaultSecret -VaultName $KeyVault -Name $kvCertName -AsPlainText -ErrorAction SilentlyContinue
+                  if ($null -eq $secret) {
+                      Write-Error "[ERROR] Cannot find $kvCertName in Azure KeyVault"
+                      $foundError = $true
+                  } else {
+                      Write-Host "Certificate $kvCertName found in Azure KeyVault"
+                  }
+              }
+          }
+
+          # Check encryption certificate
+          $encryptCertName = 'Cert-DSCEncrypt1'
+          Write-Host "Processing certificate: $encryptCertName"
+
+          $secret = Get-AzKeyVaultSecret -VaultName $KeyVault -Name $encryptCertName -AsPlainText -ErrorAction SilentlyContinue
+          if ($null -eq $secret) {
+              Write-Error "[ERROR] Cannot find $encryptCertName in Azure KeyVault"
+              $foundError = $true
+          } else {
+              Write-Host "Certificate $encryptCertName found in Azure KeyVault"
+          }
+
+          if ($foundError) {
+              Write-Error 'Validation of KeyVault Secrets failed!'
+              exit 1
+          } else {
+              Write-Host 'Validation of KeyVault Secrets passed successfully!'
+          }
         env:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-
-      # Validate Secrets in Azure KeyVault
-      - name: Validate Secrets
-        uses: azure/powershell@v1
-        with:
-          inlineScript: |
-            .\s\CICD/Scripts/ValidateSecrets.ps1 -KeyVault "${{ secrets.KEY_VAULT }}"
-          azPSVersion: 'latest'
-          failOnStandardError: true
-          errorActionPreference: 'Stop'
 
       # Run Pre-Build QA Tests (Merge and Test Data Files)
       - name: Pre Build (Merge and Test Data Files)
