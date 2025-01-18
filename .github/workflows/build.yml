@@ -18,7 +18,7 @@ jobs:
           path: ./s/CICD
           token: ${{ secrets.DSC }}
 
-      # Debug: List files in Scripts directory to verify the script exists
+      # Debug: List files in the Scripts directory to ensure the script exists
       - name: List Files in CICD Scripts Directory
         run: |
           dir ./s/CICD/Scripts
@@ -27,11 +27,11 @@ jobs:
       - name: Checkout Data Repository
         uses: actions/checkout@v3
         with:
-          repository: Digital-Technologies-Holding/M365DSC_Data  # Replace with actual repo containing Environments
+          repository: Digital-Technologies-Holding/M365DSC_Data
           path: ./s/Data
           token: ${{ secrets.DSC }}
 
-      # Configure WinRM with cmd
+      # Configure WinRM
       - name: Configure WinRM
         run: |
           cmd.exe /c "
@@ -43,7 +43,7 @@ jobs:
           "
 
       # Install Required Modules (Prepare Agent)
-      - name: Prepare Agent (Install Modules)
+      - name: Install Required Modules
         shell: pwsh
         run: |
           ./s/CICD/Scripts/DeployModules.ps1 -PackageSourceLocation "${{ secrets.PACKAGE_SOURCE_LOCATION }}" -PATToken "${{ secrets.PAT_TOKEN }}"
@@ -51,7 +51,7 @@ jobs:
           FAIL_ON_STDERR: true
 
       # Set up Azure authentication
-      - name: Set up Azure authentication
+      - name: Set up Azure Authentication
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
@@ -77,7 +77,7 @@ jobs:
         uses: azure/powershell@v1
         with:
           inlineScript: |
-            .\s\CICD\Scripts\ValidateSecrets.ps1 -KeyVault "${{ secrets.KEY_VAULT }}"
+            .\s\CICD/Scripts/ValidateSecrets.ps1 -KeyVault "${{ secrets.KEY_VAULT }}"
           azPSVersion: 'latest'
           failOnStandardError: true
           errorActionPreference: 'Stop'
@@ -103,7 +103,7 @@ jobs:
           SYSTEM_ACCESSTOKEN: ${{ secrets.SYSTEM_ACCESSTOKEN }}
 
       # Publish Build Artifacts
-      - name: Publish Artifacts
+      - name: Publish Build Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: DeployPackage
