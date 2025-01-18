@@ -67,7 +67,7 @@ jobs:
       - name: Prepare KeyVault
         shell: pwsh
         run: |
-          ./s/CICD/Supportscripts/PrepareKeyvault.ps1 -VaultName "${{ secrets.KEY_VAULT }}" -DataFileFolder "./s/Data/Environments"
+          ./s/CICD/Supportscripts/PrepareKeyvault.ps1 -VaultName "${{ secrets.KEY_VAULT }}" -DataFileFolder "./s/DataFiles/Environments"
         env:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
