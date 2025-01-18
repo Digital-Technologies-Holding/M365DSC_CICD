@@ -46,6 +46,8 @@ jobs:
       - name: Install Required Modules
         shell: pwsh
         run: |
+          Install-Module -Name Az -AllowClobber -Force -Scope CurrentUser
+          Install-Module -Name Az.KeyVault -AllowClobber -Force -Scope CurrentUser
           ./s/CICD/Scripts/DeployModules.ps1 -PackageSourceLocation "${{ secrets.PACKAGE_SOURCE_LOCATION }}" -PATToken "${{ secrets.PAT_TOKEN }}"
         env:
           FAIL_ON_STDERR: true
